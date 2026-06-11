@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+*.egg-info/
+dist/
+
+# Data (local databases with user data)
+data/
+config.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug / test files
+*.html
+brew_install.sh
+test_*.py
+job_market.json
+
+# Old backups
+.*.swp
+*.bak
+referral_*.md
+shadow_*.md
+AI_Resume_*.md
+Tailored_*.md
+简历_*.md
