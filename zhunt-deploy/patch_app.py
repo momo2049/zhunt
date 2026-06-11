@@ -1,23 +1,46 @@
-"""安装脚本的辅助补丁：将 app.py 默认从 Ollama 改为 DeepSeek"""
+# patch_app.py — 将 app.py 默认从 Ollama 改为 DeepSeek
 import sys
 
-OLD_BLOCK = 'if "client" not in st.session_state:\n    st.session_state.client = openai.OpenAI(\n        base_url=\'http://localhost:11434/v1\',\n        api_key=\'ollama\'\n    )'
-
-NEW_BLOCK = 'if "client" not in st.session_state:\n    try:\n        import json as _j\n        with open(\'config.json\') as _f:\n            _cfg = _j.load(_f)\n        _key = _cfg.get(\'deepseek_api_key\', \'\')\n        if _key:\n            st.session_state.client = openai.OpenAI(base_url=\'https://api.deepseek.com/v1\', api_key=_key)\n        else:\n            st.session_state.client = openai.OpenAI(base_url=\'http://localhost:11434/v1\', api_key=\'ollama\')\n    except:\n        st.session_state.client = openai.OpenAI(base_url=\'http://localhost:11434/v1\', api_key=\'ollama\')'
-
 with open('app.py') as f:
-    c = f.read()
+    lines = f.readlines()
 
-if OLD_BLOCK in c:
-    c = c.replace(OLD_BLOCK, NEW_BLOCK)
-    with open('app.py', 'w') as f:
-        f.write(c)
-    try:
-        compile(c, 'app.py', 'exec')
-        print("app.py patched: DeepSeek is now the default")
-        print("Syntax OK")
-    except SyntaxError as e:
-        print("Line {}: {}".format(e.lineno, e.msg))
-        sys.exit(1)
-else:
-    print("Pattern not found (already patched or different version)")
+for i, line in enumerate(lines):
+    if line.strip() == 'if "client" not in st.session_state:':
+        # 找到 st.session_state.client = openai.OpenAI(...) 的结束括号
+        j = i + 1
+        depth = 0
+        if j < len(lines):
+            depth = lines[j].count('(') - lines[j].count(')')
+            j += 1
+        while j < len(lines) and depth > 0:
+            depth += lines[j].count('(') - lines[j].count(')')
+            j += 1
+        
+        indent = '    '
+        new_lines = [
+            'if "client" not in st.session_state:\n',
+            indent + 'try:\n',
+            indent + '    import json as _j\n',
+            indent + "    with open('config.json') as _f:\n",
+            indent + '        _cfg = _j.load(_f)\n',
+            indent + "    _key = _cfg.get('deepseek_api_key', '')\n",
+            indent + '    if _key:\n',
+            indent + "        st.session_state.client = openai.OpenAI(base_url='https://api.deepseek.com/v1', api_key=_key)\n",
+            indent + '    else:\n',
+            indent + "        st.session_state.client = openai.OpenAI(base_url='http://localhost:11434/v1', api_key='ollama')\n",
+            indent + 'except:\n',
+            indent + "    st.session_state.client = openai.OpenAI(base_url='http://localhost:11434/v1', api_key='ollama')\n",
+        ]
+        lines[i:j] = new_lines
+        break
+
+with open('app.py', 'w') as f:
+    f.writelines(lines)
+
+try:
+    compile(''.join(lines), 'app.py', 'exec')
+    print("app.py patched: DeepSeek is now the default")
+    print("Syntax OK")
+except SyntaxError as e:
+    print("Line {}: {}".format(e.lineno, e.msg))
+    sys.exit(1)

@@ -44,7 +44,7 @@ REPO_URL="https://github.com/momo2049/zhunt.git"
 
 if [ -d "$ZHUNT_DIR" ]; then
     echo -e "${YELLOW}📁 目录已存在，更新中...${NC}"
-    cd "$ZHUNT_DIR" && unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY && git pull
+    cd "$ZHUNT_DIR" && unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY && git checkout -- app.py && git pull
 else
     unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
     git clone --config http.proxy= --config https.proxy= "$REPO_URL" "$ZHUNT_DIR"
