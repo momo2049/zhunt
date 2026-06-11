@@ -107,7 +107,8 @@ if (-not (Test-Path $venvDir)) {
 }
 $pip = Join-Path $venvDir "Scripts" "pip"
 & $pip install --upgrade pip -q
-& $pip install streamlit openai playwright beautifulsoup4 rich rapidfuzz -q
+& $pip install --prefer-binary streamlit openai playwright beautifulsoup4 rich -q 2>&1 | Out-Null
+& $pip install rapidfuzz -q 2>&1 | Out-Null  # 可选，失败也继续
 Write-Host "✅ 依赖安装完成" -ForegroundColor Green
 
 # ── 6. 安装 Playwright Chromium ──────────────────
