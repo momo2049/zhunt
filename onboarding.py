@@ -21,7 +21,8 @@ def render_onboarding():
     with col_brain1:
         interview_model_options = [
             "qwen2.5:14b (本地)", "deepseek-r1:14b (本地)", "llama3.1:8b (本地)",
-            "gpt-4o (云端在线)", "deepseek-chat (云端在线)", "gemini-1.5-pro (云端在线)"
+            "gpt-4o (云端在线)", "deepseek-chat (云端在线)", "gemini-1.5-pro (云端在线)",
+            "qwen-max (云端在线)"
         ]
         chosen_brain = st.selectbox(
             "当前对话大模型：", 
@@ -57,6 +58,13 @@ def render_onboarding():
                 st.stop()
             active_client = openai.OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=key)
             active_model = "gemini-1.5-pro"
+        elif "qwen-max" in chosen_brain:
+            key = st.session_state.get("qwen_key")
+            if not key:
+                st.warning("⚠️ 提示：请先在侧边栏配置 Qwen (DashScope) API Key！")
+                st.stop()
+            active_client = openai.OpenAI(base_url="https://dashscope.aliyuncs.com/compatible-mode/v1", api_key=key)
+            active_model = "qwen-max"
         else:
             active_client = st.session_state.client
             active_model = chosen_brain.split(" ")[0]
@@ -319,7 +327,7 @@ def render_onboarding():
             # 数据物理落盘
             # ==========================================
             try:
-                profile_path = 'profile.json'
+                profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'profile.json')
                 if os.path.exists(profile_path):
                     with open(profile_path, 'r', encoding='utf-8') as f:
                         db = json.load(f)
