@@ -77,7 +77,7 @@ echo -e "${GREEN}✅ 配置已保存${NC}"
 
 # ── 4. 补丁：默认使用 DeepSeek ────────────────────
 echo -e "${YELLOW}🔧 自动适配 DeepSeek...${NC}"
-python3 zhunt-deploy/patch_app.py 2>/dev/null || python3 << 'PATCH'
+python3 zhunt-deploy/patch_app.py || python3 << 'PATCH'
 with open('app.py') as f:
     code = f.read()
 old = "st.session_state.client = openai.OpenAI(\n        base_url='http://localhost:11434/v1', \n        api_key='ollama'\n    )"
