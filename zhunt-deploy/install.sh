@@ -105,7 +105,10 @@ echo -e "${YELLOW}🐍 创建 Python 虚拟环境...${NC}"
 python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip -q
-pip install streamlit openai playwright beautifulsoup4 rich rapidfuzz -q
+# 装核心依赖
+pip install streamlit openai playwright beautifulsoup4 rich -q
+# rapidfuzz 可选，装不上会降级到 difflib（代码已处理）
+pip install rapidfuzz -q 2>/dev/null || echo "   (rapidfuzz 不可用，已降级到标准库 difflib)" 
 
 echo -e "${GREEN}✅ 依赖安装完成${NC}"
 
