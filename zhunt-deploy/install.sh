@@ -46,7 +46,7 @@ if [ -d "$ZHUNT_DIR" ]; then
     echo -e "${YELLOW}📁 目录已存在，更新中...${NC}"
     cd "$ZHUNT_DIR" && git pull
 else
-    git clone "$REPO_URL" "$ZHUNT_DIR"
+    git clone --config http.proxy= --config https.proxy= "$REPO_URL" "$ZHUNT_DIR"
     cd "$ZHUNT_DIR"
 fi
 
