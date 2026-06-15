@@ -672,12 +672,10 @@ class HunterAgent:
                         if detected_city == "未知" and self.target_cities:
                             detected_city = self.target_cities[0]
                         salary_max, salary_text = self._parse_salary_info(card_text)
-                        # 📌 DOM 提取的岗位（短文本无完整 JD）跳过 AI 评估，直接给基础分
-                        #    让标题模糊匹配过的数据能流到前端
+                        # 📌 短文本岗位：用关键词匹配快速筛选（不进 AI 评估，省时间）
+                        #    留存岗位等循环结束后再补 JD + 重评分
                         if len(card_text) < 100:
-                            # DOM 提取的岗位：按标题做基础相关性检查
                             _title = (job.get("title", "") or "").lower()
-                            # 定义候选人的相关性关键词（AI/金融+销售/商务）
                             _industry_kw = ["ai", "人工智能", "大模型", "金融", "金融科技",
                                             "科技", "智能", "数字化", "云", "saas", "软件",
                                             "技术", "数据", "算法"]
@@ -687,13 +685,13 @@ class HunterAgent:
                             _has_role = any(k in _title for k in _role_kw)
                             if _has_industry and _has_role:
                                 evaluation = {"is_low_quality_or_misplaced": False, "score": 58,
-                                              "reason": "AI/金融方向相关岗位，标题匹配通过"}
+                                              "reason": "AI/金融方向相关岗位"}
                             elif _has_role:
                                 evaluation = {"is_low_quality_or_misplaced": False, "score": 50,
-                                              "reason": "岗位名称相关，但行业方向待确认"}
+                                              "reason": "岗位名称相关，行业方向待确认"}
                             else:
                                 evaluation = {"is_low_quality_or_misplaced": True, "score": 20,
-                                              "reason": f"岗位方向不匹配（{_title[:20]}）"}
+                                              "reason": f"岗位不匹配（{_title[:20]}）"}
                         else:
                             evaluation = self._ai_evaluate_match(card_text)
                         if evaluation.get('is_low_quality_or_misplaced', False):
@@ -713,36 +711,48 @@ class HunterAgent:
                                 "raw_text": card_text,
                                 "source": job.get("source", "未知渠道")
                             })
-                # 🔍 岗位详情补全：对每个留存的岗位，打开详情页抓取完整 JD
-                if final_graded_jobs:
-                    console.print(f"[cyan]🔍 正在获取 {len(final_graded_jobs)} 个岗位的完整 JD 详情...[/cyan]")
+
+                # 🔍 补全短文本岗位的 JD 详情并重新 AI 评分
+                _to_enrich = [j for j in final_graded_jobs if len(j.get('raw_text', '')) < 100]
+                _to_reeval = []
+                if _to_enrich:
+                    console.print(f"[cyan]🔍 正在补全 {len(_to_enrich)} 个短文本岗位的 JD 详情...[/cyan]")
                     if progress_callback:
-                        progress_callback(f"🔍 正在获取 {len(final_graded_jobs)} 个岗位的完整 JD 详情...")
-                    for enrich_idx, enrich_job in enumerate(final_graded_jobs, 1):
+                        progress_callback(f"🔍 补全 JD 详情: 0/{len(_to_enrich)}")
+                    for _idx, _ej in enumerate(_to_enrich, 1):
                         try:
-                            detail_page = context.new_page()
-                            detail_page.goto(enrich_job['url'], wait_until="domcontentloaded", timeout=15000)
-                            time.sleep(2.0)
-                            page_text = detail_page.locator("body").inner_text(timeout=5000)
-                            # 如果页面上有更多内容，替换 raw_text
-                            if len(page_text) > len(enrich_job.get('raw_text', '')):
-                                enrich_job['raw_text'] = page_text[:3000]
-                                jsondata = None
-                                pre_elem = detail_page.locator("pre")
-                                if pre_elem.is_visible(timeout=1000):
-                                    try:
-                                        jsondata = json.loads(pre_elem.inner_text())
-                                    except:
-                                        pass
-                                if jsondata and isinstance(jsondata, dict):
-                                    desc = jsondata.get('description') or jsondata.get('detail') or jsondata.get('introduction') or ''
-                                    if desc and len(str(desc)) > 100:
-                                        enrich_job['raw_text'] = str(desc)
-                            detail_page.close()
-                            if progress_callback and enrich_idx % 5 == 0:
-                                progress_callback(f"🔍 JD 详情获取进度: {enrich_idx}/{len(final_graded_jobs)}")
-                        except Exception as enrich_e:
-                            console.print(f"[dim]⚠️ 获取 JD 详情失败: {enrich_job.get('url','')[:60]} - {str(enrich_e)[:60]}[/dim]")
+                            _dp = context.new_page()
+                            _dp.goto(_ej['url'], wait_until="domcontentloaded", timeout=15000)
+                            time.sleep(1.5)
+                            _pt = _dp.locator("body").inner_text(timeout=3000)
+                            if len(_pt) > len(_ej.get('raw_text', '')):
+                                _ej['raw_text'] = _pt[:3000]
+                                _to_reeval.append(_ej)
+                            _dp.close()
+                        except:
+                            pass
+                        if progress_callback and _idx % 10 == 0:
+                            progress_callback(f"🔍 补全 JD 详情: {_idx}/{len(_to_enrich)}")
+                # 重新 AI 评分（只对有完整 JD 且评分低于 60 的岗位）
+                _to_reeval = [j for j in final_graded_jobs 
+                             if len(j.get('raw_text', '')) >= 100 and j.get('score', 0) < 60]
+                if _to_reeval:
+                    console.print(f"[cyan]🤖 正在对 {len(_to_reeval)} 个岗位进行 AI 复评...[/cyan]")
+                    if progress_callback:
+                        progress_callback(f"🤖 AI 复评: 0/{len(_to_reeval)}")
+                    for _idx, _ej in enumerate(_to_reeval, 1):
+                        _reval = self._ai_evaluate_match(_ej['raw_text'])
+                        _ej['score'] = _reval.get('score', _ej['score'])
+                        _ej['reason'] = _reval.get('reason', _ej['reason'])
+                        if progress_callback and _idx % 5 == 0:
+                            progress_callback(f"🤖 AI 复评: {_idx}/{len(_to_reeval)}")
+                    # 二次过滤
+                    before = len(final_graded_jobs)
+                    final_graded_jobs = [j for j in final_graded_jobs if j.get('score', 0) >= 55]
+                    after = len(final_graded_jobs)
+                    metrics['kept_count'] = after
+                    if before != after:
+                        console.print(f"[yellow]⚠️ 二次过滤移除了 {before - after} 个低分岗位[/yellow]")
                 
                 console.print(f"[cyan]📈 扫街完成: 审计 {metrics['total_scanned_jds']} | 拦截 {metrics['rejected_count']} | 留存 {metrics['kept_count']}[/cyan]")
             finally:
