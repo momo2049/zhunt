@@ -733,13 +733,14 @@ class HunterAgent:
                             pass
                         if progress_callback and _idx % 10 == 0:
                             progress_callback(f"🔍 补全 JD 详情: {_idx}/{len(_to_enrich)}")
-                # 重新 AI 评分（只对有完整 JD 且评分低于 60 的岗位）
+                # 重新 AI 评分：所有补完 JD 的岗位统一走 AI，覆盖关键词分数
                 _to_reeval = [j for j in final_graded_jobs 
-                             if len(j.get('raw_text', '')) >= 100 and j.get('score', 0) < 60]
+                             if len(j.get('raw_text', '')) >= 100]
                 if _to_reeval:
-                    console.print(f"[cyan]🤖 正在对 {len(_to_reeval)} 个岗位进行 AI 复评...[/cyan]")
+                    _m = getattr(self, 'model', '?')
+                    console.print(f"[cyan]🤖 AI 评估: 模型={_m}, 岗位数={len(_to_reeval)}[/cyan]")
                     if progress_callback:
-                        progress_callback(f"🤖 AI 复评: 0/{len(_to_reeval)}")
+                        progress_callback(f"🤖 AI 评估 ({_m}): 0/{len(_to_reeval)}")
                     for _idx, _ej in enumerate(_to_reeval, 1):
                         _reval = self._ai_evaluate_match(_ej['raw_text'])
                         _ej['score'] = _reval.get('score', _ej['score'])

@@ -228,7 +228,35 @@ with tab1:
             if not active_keywords:
                 st.error("❌ 错误：当前档案缺少目标搜索关键词！请在下方输入框中手动规划或前往 Tab 0 重新访谈归档。")
             else:
-                agent = HunterAgent(client, "qwen2.5:14b", curr_candidate, legacy_path_result, target_cities=selected_cities)
+                # 🤖 选择 AI 评估模型（侧边栏需配置对应的 API Key）
+                _scout_model = st.selectbox(
+                    "🤖 岗位匹配 AI 评估模型",
+                    options=["deepseek-chat", "gpt-4o", "qwen-max", "gemini-1.5-pro"],
+                    index=0,
+                    key="scout_model",
+                    label_visibility="collapsed"
+                )
+                _scout_client = None
+                if "gpt-4o" in _scout_model:
+                    _key = st.session_state.get("openai_key", "")
+                    if _key:
+                        _scout_client = openai.OpenAI(base_url="https://api.openai.com/v1", api_key=_key)
+                elif "qwen-max" in _scout_model:
+                    _key = st.session_state.get("qwen_key", "")
+                    if _key:
+                        _scout_client = openai.OpenAI(base_url="https://dashscope.aliyuncs.com/compatible-mode/v1", api_key=_key)
+                elif "gemini" in _scout_model:
+                    _key = st.session_state.get("gemini_key", "")
+                    if _key:
+                        _scout_client = openai.OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=_key)
+                else:
+                    _key = st.session_state.get("deepseek_key", "")
+                    if _key:
+                        _scout_client = openai.OpenAI(base_url="https://api.deepseek.com/v1", api_key=_key)
+                if not _scout_client:
+                    st.error(f"❌ 请先在左侧「云端商业模型密匙舱」配置当前模型 ({_scout_model}) 的 API Key")
+                    st.stop()
+                agent = HunterAgent(_scout_client, _scout_model, curr_candidate, legacy_path_result, target_cities=selected_cities)
                 
                 with st.spinner("卫星雷达正在扫描检索，并实时利用AI审判目标JD与你原子资产的匹配度..."):
                     final_results = agent.run_scout_loop(progress_callback=status_placeholder.info)
