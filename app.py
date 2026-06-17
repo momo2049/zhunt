@@ -215,7 +215,7 @@ with tab1:
         with col_city:
             selected_cities = st.multiselect(
                 "📍 **目标核心城市范围限定：**",
-                options=["北京", "上海", "深圳", "广州", "杭州", "成都"],
+                options=["北京", "上海", "深圳", "广州", "杭州", "成都", "香港"],
                 default=["北京", "上海", "深圳"]
             )
         

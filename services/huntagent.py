@@ -466,6 +466,60 @@ class AIVerticalScout(BaseScout):
             console.print(f"[red]❌ [AI垂类招聘战线] 抓取异常: {str(e)}[/red]")
         return results
 
+# ================= 🔍 侦察兵 5：香港招聘平台 (JobsDB / CTgoodjobs / Indeed) =================
+
+class HKJobScout(BaseScout):
+    """香港招聘平台侦察兵"""
+    def __init__(self):
+        super().__init__()
+        self.platforms = [
+            {"name": "JobsDB HK", "url": "https://hk.jobsdb.com/hk/search-jobs/{}",
+             "selectors": ["a[href*='/job/']", "h3[class*='job-title'] a", "a[class*='job-title']"],
+             "domain": "https://hk.jobsdb.com"},
+            {"name": "CTgoodjobs", "url": "https://www.ctgoodjobs.hk/search/?keywords={}",
+             "selectors": ["h2 a[href*='/job/']", "a[class*='job-title']", "[class*='result-item'] a"],
+             "domain": "https://www.ctgoodjobs.hk"},
+            {"name": "Indeed HK", "url": "https://hk.indeed.com/jobs?q={}",
+             "selectors": ["h2.jobTitle a", "a.jcs-JobTitle", ".jobTitle a"],
+             "domain": "https://hk.indeed.com"},
+        ]
+
+    def start(self, browser_context):
+        self.context = browser_context
+
+    def scrape_keyword(self, keyword, city, progress_callback):
+        results = []
+        for p in self.platforms:
+            try:
+                search_url = p["url"].format(keyword.replace(" ", "+"))
+                page = self.context.new_page()
+                page.goto(search_url, wait_until="domcontentloaded", timeout=15000)
+                time.sleep(3.0)
+                html = page.content()
+                soup = BeautifulSoup(html, 'html.parser')
+                seen = set()
+                for sel in p["selectors"]:
+                    for elem in soup.select(sel):
+                        title = elem.get_text().strip()
+                        href = elem.get("href", "")
+                        if title and len(title) >= 3 and title not in seen:
+                            seen.add(title)
+                            if href and not href.startswith("http"):
+                                href = p["domain"] + href
+                            results.append({
+                                "url": href,
+                                "title": title,
+                                "raw_text": f"【{p['name']}】\n城市：{city}\n岗位：{title}".strip(),
+                                "source": p["name"]
+                            })
+                page.close()
+            except Exception as e:
+                console.print(f"[red]\u274c [{p['name']}] 抓取异常: {str(e)}[/red]")
+        if results:
+            console.print(f"[green]\u2705 香港平台共捕获 {len(results)} 个岗位[/green]")
+        return results
+
+
 # ================= 🧠 核心猎头调度中枢 =================
 
 class HunterAgent:
@@ -486,7 +540,8 @@ class HunterAgent:
             LiepinScout(),
             BossScout(),
             AIOfficialSiteScout(),
-            AIVerticalScout()
+            AIVerticalScout(),
+            HKJobScout()
         ]
 
     def _generate_missions(self):
@@ -665,7 +720,7 @@ class HunterAgent:
                                 metrics['rejected_count'] += 1
                                 continue 
                         detected_city = "未知"
-                        for city in ["北京", "上海", "深圳", "广州", "杭州", "成都"]:
+                        for city in ["北京", "上海", "深圳", "广州", "杭州", "成都", "香港"]:
                             if city in card_text:
                                 detected_city = city
                                 break
