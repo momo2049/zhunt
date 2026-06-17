@@ -431,7 +431,7 @@ class AIVerticalScout(BaseScout):
             time.sleep(2.0)
             html_content = self.page.content()
             soup = BeautifulSoup(html_content, 'html.parser')
-            topic_cells = soup.select(".box .cell[class*='item']")
+            topic_cells = soup.select("table td.cell, .box .cell")
             target_links = []
             for cell in topic_cells:
                 title_link = cell.select_one(".topic-link")
@@ -674,7 +674,7 @@ class HunterAgent:
         with sync_playwright() as p:
             context = p.chromium.launch_persistent_context(
                 self.user_data_dir,
-                headless=False,
+                headless=True,
                 args=["--disable-blink-features=AutomationControlled"],
                 viewport={"width": 1280, "height": 800},
                 user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

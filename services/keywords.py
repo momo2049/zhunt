@@ -32,10 +32,23 @@ KEYWORD_SYNONYMS = {
     "行业BD":      ["商务拓展", "行业拓展", "业务发展", "BD"],
     "AI产品":      ["AI产品经理", "人工智能产品", "大模型产品", "AI应用产品"],
     "AI运营":      ["AI运营", "大模型运营", "人工智能运营"],
+    # English synonyms for HK platforms
+    "金融AI解决方案销售": ["AI Solution Sales", "FinTech Sales", "AI Business Development"],
+    "客户成功经理":     ["Customer Success Manager", "Client Success Manager"],
+    "金融科技销售":     ["FinTech Sales", "Financial Technology Sales"],
+    "销售经理":        ["Sales Manager", "BD Manager", "Business Development"],
+    "客户成功":        ["Customer Success", "Client Success", "Account Management"],
+    "解决方案销售":     ["Solution Sales", "Solution Consultant", "Pre-Sales"],
+    "金融行业BD":      ["Financial BD", "FinTech BD", "Business Development Finance"],
+    "生态合作":        ["Partnership Manager", "Channel Partnership", "Ecosystem BD"],
+    "金融科技":        ["FinTech", "Financial Technology"],
+    "AI销售":         ["AI Sales", "Artificial Intelligence Sales"],
+    "商务经理":        ["Business Manager", "Commercial Manager"],
+    "机构合作":        ["Institutional Partnership", "Institutional BD"],
+
 }
 
 SEARCH_SUFFIXES = ["招聘", "job", "岗位 2026"]
-
 
 def extract_tech_keywords(raw_keywords):
     if not raw_keywords:
@@ -45,7 +58,6 @@ def extract_tech_keywords(raw_keywords):
     else:
         keys = [k.strip() for k in str(raw_keywords).split(',')]
     return [k for k in keys if k]
-
 
 def decompose_cn_job_keyword(keywords):
     """将中文复合职位关键词拆解为更短的高召回子关键词
@@ -106,7 +118,6 @@ def decompose_cn_job_keyword(keywords):
               if r in short_whitelist or (3 <= len(r) <= 12)}
     
     return list(result)
-
 
 def generate_job_keywords(raw_keywords):
     base_keys = extract_tech_keywords(raw_keywords)
