@@ -474,13 +474,13 @@ class HKJobScout(BaseScout):
         super().__init__()
         self.platforms = [
             {"name": "JobsDB HK", "url": "https://hk.jobsdb.com/hk/search-jobs/{}",
-             "selectors": ["a[href*='/job/']", "h3[class*='job-title'] a", "a[class*='job-title']"],
+             "selectors": ["a[href*='/job/']", "a[href*='jobsdb']", "h3[class*='title'] a"],
              "domain": "https://hk.jobsdb.com"},
             {"name": "CTgoodjobs", "url": "https://www.ctgoodjobs.hk/search/?keywords={}",
-             "selectors": ["h2 a[href*='/job/']", "a[class*='job-title']", "[class*='result-item'] a"],
+             "selectors": ["a[href*='/job/']", "a[class*='job-title']", "a[href*='ctgoodjobs']"],
              "domain": "https://www.ctgoodjobs.hk"},
             {"name": "Indeed HK", "url": "https://hk.indeed.com/jobs?q={}",
-             "selectors": ["h2.jobTitle a", "a.jcs-JobTitle", ".jobTitle a"],
+             "selectors": ["a[href*='/rc/']", "h2 a[href*='clk']", "a.jcs-JobTitle"],
              "domain": "https://hk.indeed.com"},
         ]
 
@@ -489,17 +489,25 @@ class HKJobScout(BaseScout):
 
     def scrape_keyword(self, keyword, city, progress_callback):
         results = []
+        import urllib.parse
         for p in self.platforms:
             try:
-                search_url = p["url"].format(keyword.replace(" ", "+"))
+                search_url = p["url"].format(urllib.parse.quote(keyword))
                 page = self.context.new_page()
-                page.goto(search_url, wait_until="domcontentloaded", timeout=15000)
-                time.sleep(3.0)
+                page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                progress_callback(f"\ud83c\udf0d [{p['name']}] 搜索: {keyword[:20]}")
+                page.goto(search_url, wait_until="domcontentloaded", timeout=20000)
+                time.sleep(2.0)
+                console.print(f"[dim]\ud83d\udccd [{p['name']}] URL: {search_url[:80]} | Title: {page.title()[:60]}[/dim]")
                 html = page.content()
+                console.print(f"[dim]  HTML 长度: {len(html)} 字符[/dim]")
                 soup = BeautifulSoup(html, 'html.parser')
                 seen = set()
                 for sel in p["selectors"]:
-                    for elem in soup.select(sel):
+                    matches = soup.select(sel)
+                    if matches:
+                        console.print(f"[dim]    \ud83d\udd0d 选择器 '{sel}' 命中 {len(matches)} 个[/dim]")
+                    for elem in matches:
                         title = elem.get_text().strip()
                         href = elem.get("href", "")
                         if title and len(title) >= 3 and title not in seen:
@@ -509,7 +517,7 @@ class HKJobScout(BaseScout):
                             results.append({
                                 "url": href,
                                 "title": title,
-                                "raw_text": f"【{p['name']}】\n城市：{city}\n岗位：{title}".strip(),
+                                "raw_text": f"【{p['name']}】\n城市：香港\n岗位：{title}".strip(),
                                 "source": p["name"]
                             })
                 page.close()
@@ -517,6 +525,8 @@ class HKJobScout(BaseScout):
                 console.print(f"[red]\u274c [{p['name']}] 抓取异常: {str(e)}[/red]")
         if results:
             console.print(f"[green]\u2705 香港平台共捕获 {len(results)} 个岗位[/green]")
+        else:
+            console.print(f"[yellow]\u26a0\ufe0f 香港平台未捕获任何岗位，请检查终端日志[/yellow]")
         return results
 
 
