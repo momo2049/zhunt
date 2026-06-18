@@ -712,7 +712,7 @@ class HunterAgent:
 
                     captured_jobs = []
                     for scout in self.scouts:
-                        if isinstance(scout, (AIOfficialSiteScout, AIVerticalScout)):
+                        if isinstance(scout, (AIOfficialSiteScout, AIVerticalScout, HKJobScout)):
                             # 官网与极客社区等无硬性区域前置，由其内部拦截器模糊判断
                             captured_jobs.extend(scout.scrape_keyword(key, "全国", dashboard_logger))
                         else:
