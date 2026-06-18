@@ -501,6 +501,9 @@ class HKJobScout(BaseScout):
                 console.print(f"[dim]\ud83d\udccd [{p['name']}] URL: {search_url[:80]} | Title: {page.title()[:60]}[/dim]")
                 html = page.content()
                 console.print(f"[dim]  HTML 长度: {len(html)} 字符[/dim]")
+                _body_text = page.locator("body").inner_text(timeout=2000)
+                if _body_text:
+                    console.print(f"[dim]  BODY 预览 (前600字): {_body_text[:600].strip()[:600]}[/dim]")
                 soup = BeautifulSoup(html, 'html.parser')
                 seen = set()
                 for sel in p["selectors"]:
