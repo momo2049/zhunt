@@ -495,21 +495,21 @@ class HKJobScout(BaseScout):
                 search_url = p["url"].format(urllib.parse.quote(keyword))
                 page = self.context.new_page()
                 page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-                progress_callback(f"\ud83c\udf0d [{p['name']}] 搜索: {keyword[:20]}")
+                progress_callback(f"[EMOJI] [{p['name']}] 搜索: {keyword[:20]}")
                 page.goto(search_url, wait_until="domcontentloaded", timeout=20000)
                 time.sleep(2.0)
-                console.print(f"[dim]\ud83d\udccd [{p['name']}] URL: {search_url[:80]} | Title: {page.title()[:60]}[/dim]")
+                console.print(f"[dim][EMOJI] [{p['name']}] URL: {search_url[:80]} | Title: {page.title()[:60]}[/dim]")
                 html = page.content()
                 console.print(f"[dim]  HTML 长度: {len(html)} 字符[/dim]")
                 _body_text = page.locator("body").inner_text(timeout=2000)
                 if _body_text:
-                    console.print(f"[dim]  BODY 前600字: {_body_text[:600].strip()[:600]}[/dim]")
+                    console.print(f"[dim]  BODY: {_body_text[:600].strip()[:600].encode('utf-8',errors='replace').decode('utf-8')}[/dim]")
                 soup = BeautifulSoup(html, 'html.parser')
                 seen = set()
                 for sel in p["selectors"]:
                     matches = soup.select(sel)
                     if matches:
-                        console.print(f"[dim]    \ud83d\udd0d 选择器 '{sel}' 命中 {len(matches)} 个[/dim]")
+                        console.print(f"[dim]    [EMOJI] 选择器 '{sel}' 命中 {len(matches)} 个[/dim]")
                     for elem in matches:
                         title = elem.get_text().strip()
                         href = elem.get("href", "")
