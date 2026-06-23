@@ -473,13 +473,13 @@ class HKJobScout(BaseScout):
     def __init__(self):
         super().__init__()
         self.platforms = [
-            {"name": "JobsDB HK", "url": "https://hk.jobsdb.com/hk/Jobs?keywords={}",
-             "selectors": ["a[href*='/job/']", "a[href*='jobsdb']", "h3[class*='title'] a"],
+            {"name": "JobsDB HK", "urls": ["https://hk.jobsdb.com/hk/Jobs?keywords={}", "https://hk.jobsdb.com/hk/search-jobs/{}"],
+             "selectors": ["a[href*='/job/']", "h3[class*='title'] a", "a[href*='jobsdb']"],
              "domain": "https://hk.jobsdb.com"},
-            {"name": "CTgoodjobs", "url": "https://www.ctgoodjobs.hk/search/result/?keywords={}",
+            {"name": "CTgoodjobs", "urls": ["https://www.ctgoodjobs.hk/search?keywords={}", "https://www.ctgoodjobs.hk/job-search/?keywords={}"],
              "selectors": ["a[href*='/job/']", "a[class*='job-title']", "a[href*='ctgoodjobs']"],
              "domain": "https://www.ctgoodjobs.hk"},
-            {"name": "Indeed HK", "url": "https://hk.indeed.com/jobs?q={}",
+            {"name": "Indeed HK", "urls": ["https://hk.indeed.com/jobs?q={}", "https://hk.indeed.com/jobs?q={}"],
              "selectors": ["a[href*='/rc/']", "h2 a[href*='clk']", "a.jcs-JobTitle"],
              "domain": "https://hk.indeed.com"},
         ]
