@@ -473,10 +473,10 @@ class HKJobScout(BaseScout):
     def __init__(self):
         super().__init__()
         self.platforms = [
-            {"name": "JobsDB HK", "url": "https://hk.jobsdb.com/hk/search-jobs/{}",
+            {"name": "JobsDB HK", "url": "https://hk.jobsdb.com/hk/Jobs?keywords={}",
              "selectors": ["a[href*='/job/']", "a[href*='jobsdb']", "h3[class*='title'] a"],
              "domain": "https://hk.jobsdb.com"},
-            {"name": "CTgoodjobs", "url": "https://www.ctgoodjobs.hk/search/?keywords={}",
+            {"name": "CTgoodjobs", "url": "https://www.ctgoodjobs.hk/search/result/?keywords={}",
              "selectors": ["a[href*='/job/']", "a[class*='job-title']", "a[href*='ctgoodjobs']"],
              "domain": "https://www.ctgoodjobs.hk"},
             {"name": "Indeed HK", "url": "https://hk.indeed.com/jobs?q={}",
