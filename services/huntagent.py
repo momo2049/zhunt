@@ -473,14 +473,14 @@ class HKJobScout(BaseScout):
     def __init__(self):
         super().__init__()
         self.platforms = [
-            {"name": "JobsDB HK", "urls": ["https://hk.jobsdb.com/hk/Jobs?keywords={}", "https://hk.jobsdb.com/hk/search-jobs/{}"],
-             "selectors": ["a[href*='/job/']", "h3[class*='title'] a", "a[href*='jobsdb']"],
+            {"name": "JobsDB HK", "url": "https://hk.jobsdb.com/{}-jobs?",
+             "style": "hyphen", "selectors": ["a[href*='/job/']", "h3[class*='title'] a", "a[class*='job-link']"],
              "domain": "https://hk.jobsdb.com"},
-            {"name": "CTgoodjobs", "urls": ["https://www.ctgoodjobs.hk/search?keywords={}", "https://www.ctgoodjobs.hk/job-search/?keywords={}"],
-             "selectors": ["a[href*='/job/']", "a[class*='job-title']", "a[href*='ctgoodjobs']"],
-             "domain": "https://www.ctgoodjobs.hk"},
-            {"name": "Indeed HK", "urls": ["https://hk.indeed.com/jobs?q={}", "https://hk.indeed.com/jobs?q={}"],
-             "selectors": ["a[href*='/rc/']", "h2 a[href*='clk']", "a.jcs-JobTitle"],
+            {"name": "CTgoodjobs", "url": "https://jobs.ctgoodjobs.hk/jobs/{}",
+             "style": "hyphen", "selectors": ["a[href*='/job/']", "a[class*='job-title']", "a[href*='/jobs/']"],
+             "domain": "https://jobs.ctgoodjobs.hk"},
+            {"name": "Indeed HK", "url": "https://hk.indeed.com/jobs?q={}",
+             "style": "plus", "selectors": ["a[href*='/rc/']", "h2 a[href*='clk']", "a.jcs-JobTitle"],
              "domain": "https://hk.indeed.com"},
         ]
 
@@ -492,7 +492,9 @@ class HKJobScout(BaseScout):
         import urllib.parse
         for p in self.platforms:
             try:
-                search_url = p["url"].format(urllib.parse.quote(keyword))
+                # Convert keyword: "Financial Technology" -> "financial-technology" or "financial+technology"
+                _kw = keyword.lower().replace(" ", "-") if p.get("style") == "hyphen" else keyword.lower().replace(" ", "+")
+                search_url = p["url"].format(_kw)
                 page = self.context.new_page()
                 page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
                 progress_callback(f"[EMOJI] [{p['name']}] 搜索: {keyword[:20]}")
